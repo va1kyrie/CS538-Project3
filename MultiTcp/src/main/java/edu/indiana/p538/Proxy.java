@@ -28,8 +28,7 @@ public class Proxy implements Runnable {
     private ByteBuffer readBuf = ByteBuffer.allocate(8208); //buffer equal to 2 pipe messages; can adjust as necessary
 
     // Instance of the LP socket channel. Might need an array of these objects for multiple pipes
-    private int pipes;
-    private ArrayList<SocketChannel> freePipes;
+    private SocketChannel clientChannel;
 
     private BlockingQueue<ProxyEvents> pendingEvents = new ArrayBlockingQueue<>(50);
     private ConcurrentHashMap<Integer,SocketChannel> connectionChannelMap = new ConcurrentHashMap<>();
@@ -44,12 +43,10 @@ public class Proxy implements Runnable {
 
     private SocketChannel server = null;
 
-    public Proxy(int port, ProxyWorker worker, int pipes) throws IOException{
+    public Proxy(int port, ProxyWorker worker) throws IOException{
         this.port = port;
         this.serverSocketChannel = ServerSocketChannel.open();
         this.worker = worker;
-        this.pipes = pipes;
-        this.freePipes = new ArrayList<>(pipes);
 
         //initiate the selector
         this.serverSocketChannel.socket().bind(new InetSocketAddress(port));
@@ -136,7 +133,7 @@ public class Proxy implements Runnable {
         SocketChannel sockCh = servCh.accept();
         sockCh.configureBlocking(false);
         //Saving the LP channel object which needs to be ready to WRITE, while reading data from the server
-        freePipes.add(sockCh);
+        clientChannel=sockCh;
 
         //tells the selector we want to know when data is available to be read
         sockCh.register(this.selector, SelectionKey.OP_READ);
@@ -152,18 +149,12 @@ public class Proxy implements Runnable {
         }catch (IOException e){
             //entering here means the local proxy has forced the connection closed
             key.cancel();
-//            if(freePipes.contains(sockCh)){
-//                freePipes.remove(sockCh);
-//            }
             sockCh.close();
             return;
         }
 
         if(numRead == -1){
             //socket shut down cleanly. cancel channel
-//            if(freePipes.contains(sockCh)){
-//                freePipes.remove(sockCh);
-//            }
             key.channel().close();
             key.cancel();
             return;
@@ -181,13 +172,11 @@ public class Proxy implements Runnable {
         }
         else{
             dir = ProxyWorker.TO_LP;
-            //if(!freePipes.isEmpty()){
-                //SelectionKey lpSocketKey = this.freePipes.get(0).keyFor(this.selector);
-                //lpSocketKey.interestOps(SelectionKey.OP_WRITE);
-                int connectionId=(int)key.attachment();
+            SelectionKey lpSocketKey = this.clientChannel.keyFor(this.selector);
+            //lpSocketKey.interestOps(SelectionKey.OP_WRITE);
+            int connectionId=(int)key.attachment();
 
-                this.worker.processData(dir, this, connectionId, this.readBuf.array(), numRead);
-            //}
+            this.worker.processData(dir, this, connectionId, this.readBuf.array(), numRead);
 
 //            //System.out.println("<Data Print>");
 
@@ -346,8 +335,6 @@ public class Proxy implements Runnable {
                 }
                 if (dataList.isEmpty()) {
                     key.interestOps(SelectionKey.OP_READ);
-
-                    //done performing write, so pop it back into freePipes
                 }
             }
         }
