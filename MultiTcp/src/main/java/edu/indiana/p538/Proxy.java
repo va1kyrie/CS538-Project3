@@ -32,13 +32,16 @@ public class Proxy implements Runnable {
     private ArrayList<SocketChannel> freePipes;
 
     private BlockingQueue<ProxyEvents> pendingEvents = new ArrayBlockingQueue<>(50);
+
     private ConcurrentHashMap<Integer,SocketChannel> connectionChannelMap = new ConcurrentHashMap<>();
     //this map is to map connection IDs with the list of data
     //Renamed this map to avoid confusion
     private ConcurrentHashMap<Integer,Integer> expectedSequenceList=new ConcurrentHashMap<>();
+
     //this hashmap is of the form connID->{seqId->data}
     private ConcurrentHashMap<Integer,ConcurrentSkipListMap<Integer,byte[]>> connectionDataList = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer,ArrayList<byte[]>> responseDataList = new ConcurrentHashMap<>();
+
     public Proxy(int port, ProxyWorker worker, int numPipes) throws IOException{
         this.port = port;
         this.serverSocketChannel = ServerSocketChannel.open();
@@ -127,6 +130,7 @@ public class Proxy implements Runnable {
         SocketChannel sockCh = servCh.accept();
         sockCh.configureBlocking(false);
         freePipes.add(sockCh);
+
         //tells the selector we want to know when data is available to be read
         sockCh.register(this.selector, SelectionKey.OP_READ);
     }
@@ -153,7 +157,6 @@ public class Proxy implements Runnable {
             //socket shut down cleanly. cancel channel
             System.out.println("Closed socket");
 
-            //TODO DEBUG
             key.channel().close();
             key.cancel();
             return;
@@ -213,6 +216,7 @@ public class Proxy implements Runnable {
             connectionDataList.put(connInfo,dataMap);
             NavigableSet<Integer> availSequences=dataMap.keySet();
             int expectedSeq=expectedSequenceList.get(connInfo);
+
             while(availSequences.contains(expectedSeq)&&dataMap.get(expectedSeq)!=null){
                 //This ensures that expectedSeq does not point to a sequence number that already exists in the map
                 expectedSeq+=1;
@@ -293,6 +297,7 @@ public class Proxy implements Runnable {
                 ConcurrentSkipListMap<Integer,byte[]> dataMap = connectionDataList.get(connId);
                 int expectedSequence=expectedSequenceList.get(connId);
                 NavigableSet<Integer> seqNumberList=dataMap.keySet();
+
                 for(int availSequence:seqNumberList) {
                     if (availSequence < expectedSequence) {
                         ByteBuffer buf = ByteBuffer.wrap(dataMap.get(availSequence));
@@ -302,11 +307,13 @@ public class Proxy implements Runnable {
                         }
                     }
                 }
+
                 for(int availSequence:seqNumberList){
                     if(availSequence<expectedSequence) {
                         dataMap.remove(availSequence);
                     }
                 }
+
                 if((dataMap.containsKey(expectedSequence))&&(dataMap.get(expectedSequence)==null)){
                     this.pendingEvents.add(new ProxyEvents(new byte[0], connId, ProxyEvents.ENDING, SelectionKey.OP_CONNECT, -1));
                 }else {
