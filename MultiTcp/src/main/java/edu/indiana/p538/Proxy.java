@@ -71,12 +71,12 @@ public class Proxy implements Runnable {
                     this.pendingEvents.remove(event);
                     switch (event.getType()){
                         case ProxyEvents.WRITING:
-                            SocketChannel connectChannel=this.connectionChannelMap.get(event.getConnId()); //how does this work for server>>client messages instead of client>>server? i don't think it does...
+                            SocketChannel connectChannel=event.getSocketCh(); //how does this work for server>>client messages instead of client>>server? i don't think it does...
                             SelectionKey key = connectChannel.keyFor(this.selector);
                             key.interestOps(event.getOps());
                             break;
                         case ProxyEvents.CONNECTING:
-                            connectChannel=this.connectionChannelMap.get(event.getConnId());
+                            connectChannel=event.getSocketCh();
                             //Need to double check the register call.
                             //I'm attaching the connectionID with this socket for now.
                             // We might to make this an arraylist of connectionIDs soon
@@ -84,8 +84,8 @@ public class Proxy implements Runnable {
                             //more to do??
                             break;
                         case ProxyEvents.ENDING:
-                            connectChannel=this.connectionChannelMap.get(event.getConnId());
-                            //connectChannel.register(this.selector, event.getOps(), event.getConnId());
+                            connectChannel=event.getSocketCh();
+                            //connectChannel.register(this.selector, event.getOps(), event.getSocketCh());
                             // Removing the entry from the responseDataList once the write is complete and the connection is ended
                             this.responseDataList.remove(event.getConnId());
                             //SelectionKey endKey = connectChannel.keyFor(this.selector);
@@ -129,6 +129,7 @@ public class Proxy implements Runnable {
 
     private void accept(SelectionKey key) throws IOException{
         ServerSocketChannel servCh = (ServerSocketChannel) key.channel();
+        System.out.println("establishing pipe");
 
         SocketChannel sockCh = servCh.accept();
         sockCh.configureBlocking(false);
@@ -166,17 +167,19 @@ public class Proxy implements Runnable {
         //hand to worker thread only if the read is called from the LP socket, because packets from the server are normal TCP packets
         if(key.attachment()==null) {
             dir = ProxyWorker.TO_SERVER;
+            System.out.println("reading from LP");
             this.worker.processData(dir, this, -1, this.readBuf.array(), numRead);
             //key.interestOps(SelectionKey.OP_READ);//not sure this is necessary/should be here?
 
         }
         else{
             dir = ProxyWorker.TO_LP;
+            System.out.println("reading from server");
             SelectionKey lpSocketKey = this.clientChannel.keyFor(this.selector);
             //lpSocketKey.interestOps(SelectionKey.OP_WRITE);
             int connectionId=(int)key.attachment();
 
-            this.worker.processData(dir, this, connectionId, this.readBuf.array(), numRead);
+            this.worker.processData(dir, this, -1, this.readBuf.array(), numRead);
 
 //            //System.out.println("<Data Print>");
 
@@ -215,7 +218,8 @@ public class Proxy implements Runnable {
         //TODO: Add data to a list and then add to hashmap. Need to keep track of data sequence as well.
         //Need to read data into buffer here and raise ProxyDataEvent
         if(dir.equals(ProxyWorker.TO_SERVER)){
-            this.pendingEvents.add(new ProxyEvents(data, connId, ProxyEvents.WRITING,SelectionKey.OP_WRITE, seqId));
+            SocketChannel socket = clientChannel;
+            this.pendingEvents.add(new ProxyEvents(data, socket, connId, ProxyEvents.WRITING,SelectionKey.OP_WRITE, seqId));
             //Pull the data based on the connection ID
             if(connectionDataList.containsKey(connId)){
                 ArrayList<byte[]> dataList= connectionDataList.get(connId);
@@ -228,7 +232,8 @@ public class Proxy implements Runnable {
                 connectionDataList.put(connId,dataList);
             }
         }else if(dir.equals(ProxyWorker.TO_LP)){
-            this.pendingEvents.add(new ProxyEvents(data, connId, ProxyEvents.WRITING,SelectionKey.OP_WRITE, seqId)); //think i've taken care of dir?
+            SocketChannel socket = server;
+            this.pendingEvents.add(new ProxyEvents(data, socket, connId, ProxyEvents.WRITING,SelectionKey.OP_WRITE, seqId)); //think i've taken care of dir?
             //TODO: IMPLEMENT THIS PART RIGHT HERE
             if(responseDataList.containsKey(connId)){
                 ArrayList<byte[]> dataL = responseDataList.get(connId);
@@ -255,9 +260,11 @@ public class Proxy implements Runnable {
             //I've temporarily added port as the key to this map. Should we think of making this the connectionID?
             connectionChannelMap.put(connId,serverChannel);
 
+            System.out.println("establishing connection");
+
             server = serverChannel;
             //OP_CONNECT is getting masked by the call from ProxyWorker. Safe to listen to OP_WRITE here
-            this.pendingEvents.add(new ProxyEvents( data, connId,ProxyEvents.CONNECTING,SelectionKey.OP_CONNECT, -1));
+            this.pendingEvents.add(new ProxyEvents( data, serverChannel, connId, ProxyEvents.CONNECTING,SelectionKey.OP_CONNECT, -1));
             //serverChannel.connect(msgInfo);
             //No point in waking up here as there may not be enough data to write into the channel
             //this.selector.wakeup();
@@ -277,7 +284,8 @@ public class Proxy implements Runnable {
 
         //i want a way to get the specific connection right off the bat to poll, but i cannot think of how...going with that connectionChannelMap for now
         if(connectionChannelMap.containsKey(connId)){
-            this.pendingEvents.add(new ProxyEvents(new byte[0], connId, ProxyEvents.ENDING, SelectionKey.OP_WRITE, -1));
+            SocketChannel socket = connectionChannelMap.get(connId);
+            this.pendingEvents.add(new ProxyEvents(new byte[0], socket, connId, ProxyEvents.ENDING, SelectionKey.OP_WRITE, -1));
         }
         //this.selector.wakeup();
     }
@@ -285,6 +293,7 @@ public class Proxy implements Runnable {
         SocketChannel socketChannel = (SocketChannel) key.channel();
         //Complete connecting. This would return true if the connection is successful
         //socketChannel.configureBlocking(false);
+        System.out.println("completing connection");
         try {
             socketChannel.finishConnect();
         } catch (IOException e) {

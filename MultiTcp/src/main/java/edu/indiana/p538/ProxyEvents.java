@@ -1,7 +1,8 @@
 package edu.indiana.p538;
 
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
+import java.net.Socket;
+import java.nio.channels.SocketChannel;
 
 /**
  * Created by ladyl on 11/20/2016.
@@ -18,14 +19,16 @@ public class ProxyEvents {
 
     private int type;
     private int ops;
+    private SocketChannel socketCh;
     private int connId;
     private int seqNum;//if this number is -1, it's a SYN or a FIN package
 
-    protected ProxyEvents(byte[] message, int connId, int type, int ops, int seqNum){
+    protected ProxyEvents(byte[] message, SocketChannel sock, int connId, int type, int ops, int seqNum){
         this.data = message;
         this.ops = ops;
         this.type=type;
-        this.connId=connId;
+        this.socketCh =sock;
+        this.connId = connId;
         this.seqNum = seqNum;
     }
 
@@ -33,10 +36,6 @@ public class ProxyEvents {
 
     protected byte[] getData() {
         return data;
-    }
-
-    protected InetSocketAddress getConnInfo() {
-        return connInfo;
     }
 
     protected int getOps() {
@@ -47,7 +46,11 @@ public class ProxyEvents {
         return type;
     }
 
-    protected int getConnId() {
+    protected SocketChannel getSocketCh() {
+        return socketCh;
+    }
+
+    public int getConnId() {
         return connId;
     }
 

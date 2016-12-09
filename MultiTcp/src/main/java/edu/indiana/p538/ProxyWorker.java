@@ -30,7 +30,7 @@ public class ProxyWorker implements Runnable{
         System.arraycopy(data, 0, dataCopy, 0, count);
         queue.add(new ProxyDataEvent(dir, proxy,connId, dataCopy));
         // add will do the notify
-       // queue.notify();
+        // queue.notify();
     }
 
     @Override
@@ -49,6 +49,7 @@ public class ProxyWorker implements Runnable{
 
             //This loop is to ensure that the entire data array is read
             if(event.getDirection().equals(TO_SERVER)) {
+                System.out.println("handling data to go to server");
                 while (tracker < message.length) {
                     byte[] header = Arrays.copyOfRange(message, tracker, tracker + AppConstants.MHEADER);
                     if (PacketUtils.isMSyn(header)) {
@@ -90,20 +91,16 @@ public class ProxyWorker implements Runnable{
                     }
                 }
             }else if(event.getDirection().equals(TO_LP)){
-                    //System.out.println("<Data Print>");
-                    int connectionId = event.getConnectionId();
-                    int seqNum = expectedSequenceNumber;
-                    byte[] data = event.getData();
-                    ByteBuffer payload = ByteBuffer.wrap(data);
-                    int numRead = data.length;
-                    byte[] dataMsg=PacketUtils.generateDataMessage(payload,connectionId,expectedSequenceNumber,numRead);
-                   // expectedSequenceNumber++;
-                    (event.getProxy()).send(connectionId, dataMsg, seqNum, TO_LP);
-                }
-
-            //test for MSYN
-
-
+                System.out.println("<Data Print>");
+                int connectionId = event.getConnectionId();
+                int seqNum = expectedSequenceNumber;
+                byte[] data = event.getData();
+                ByteBuffer payload = ByteBuffer.wrap(data);
+                int numRead = data.length;
+                byte[] dataMsg=PacketUtils.generateDataMessage(payload,connectionId,expectedSequenceNumber,numRead);
+                // expectedSequenceNumber++;
+                (event.getProxy()).send(connectionId, dataMsg, seqNum, TO_LP);
+            }
 
         }
     }
