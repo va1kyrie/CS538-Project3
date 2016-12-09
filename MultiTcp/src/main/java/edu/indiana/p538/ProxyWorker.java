@@ -18,7 +18,7 @@ public class ProxyWorker implements Runnable{
     //this is really where the refactoring comes in
 
     //blocking queue for events; init. to 50, can change.
-    private BlockingQueue<ProxyDataEvent> queue = new ArrayBlockingQueue<ProxyDataEvent>(50);
+    private BlockingQueue<ProxyDataEvent> queue = new ArrayBlockingQueue<>(50);
 
     public void processData(Proxy proxy, SocketChannel socket, byte[] data, int count){
         byte[] dataCopy = new byte[count];
@@ -53,14 +53,13 @@ public class ProxyWorker implements Runnable{
                     else if(PacketAnalyzer.isMFin(header)){
                         //Code commented for now
                         //else test for MFIN
-                        //     InetSocketAddress msgInfo = PacketAnalyzer.fetchConnectionInfo(message);
                         byte payload = message[AppConstants.MHEADER];
                         String reason = PacketAnalyzer.getMFin(payload);
                         int connId = PacketAnalyzer.getConnId(header);
                         int seqNumber=PacketAnalyzer.getSeqNum(header);
                         if(reason.equals(AppConstants.FIN_FLAG) || reason.equals(AppConstants.RST_FLAG)){
                             //end connection
-                            (event.getProxy()).sendFin(connId, Integer.parseInt(reason),seqNumber);
+                            (event.getProxy()).sendFin(connId,seqNumber);
                         }
                         tracker+=AppConstants.MFIN_LEN;
 

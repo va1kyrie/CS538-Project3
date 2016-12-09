@@ -233,7 +233,6 @@ public class Proxy implements Runnable {
     protected void establishConn(InetSocketAddress msgInfo, byte[] data, int connId){
         //add to event queue; create connection as possible
         try {
-            System.out.println("Inside establish connection");
             SocketChannel serverChannel = SocketChannel.open();
             serverChannel.configureBlocking(false);
             // Kick off connection establishment
@@ -263,7 +262,7 @@ public class Proxy implements Runnable {
         }
     }
 
-    protected void sendFin(int connId, int reason,int seqNum){
+    protected void sendFin(int connId, int seqNum){
         if(connectionChannelMap.containsKey(connId)) {
             int expectedSequence=expectedSequenceList.get(connId);
             if(expectedSequence==seqNum) {
