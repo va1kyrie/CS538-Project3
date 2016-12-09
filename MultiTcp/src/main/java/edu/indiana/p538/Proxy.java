@@ -309,7 +309,7 @@ public class Proxy implements Runnable {
     }
 
     private void write(SelectionKey key) throws IOException{
-        //SocketChannel sockCh = (SocketChannel) key.channel();
+        SocketChannel sockCh = (SocketChannel) key.channel();
         //Server channel write
         if(key.attachment()!=null) { //if not null, there's an attachment and it's the connection we created to the actual server
             int connId = (int) key.attachment();
@@ -318,7 +318,7 @@ public class Proxy implements Runnable {
                 ArrayList<byte[]> dataList = connectionDataList.get(connId);
                 while (!dataList.isEmpty()) {
                     ByteBuffer buf = ByteBuffer.wrap(dataList.get(0));
-                    //int x = sockCh.write(buf);
+                    int x = sockCh.write(buf);
                     if (buf.remaining() > 0) {
                         break;
                     }
@@ -338,7 +338,7 @@ public class Proxy implements Runnable {
                 while (!dataList.isEmpty()) {
                     //System.out.println(Utils.bytesToHex(dataList.get(0)));
                     ByteBuffer buf = ByteBuffer.wrap(dataList.get(0));
-                    //int x = sockCh.write(buf);
+                    int x = sockCh.write(buf);
                     if (buf.remaining() > 0) {
                         break;
                     }
