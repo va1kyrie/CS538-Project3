@@ -70,8 +70,8 @@ public class Proxy implements Runnable {
                             if(connectChannel!=null) {
                                 SelectionKey key = connectChannel.keyFor(this.selector);
                                 key.interestOps(event.getOps());
-                                if(freePipes.contains(connectChannel)){
-                                    freePipes.remove(connectChannel);
+                                if(this.freePipes.contains(connectChannel)){
+                                    this.freePipes.remove(connectChannel);
                                 }
                             }
                             break;
@@ -129,7 +129,7 @@ public class Proxy implements Runnable {
 
         SocketChannel sockCh = servCh.accept();
         sockCh.configureBlocking(false);
-        freePipes.add(sockCh);
+        this.freePipes.add(sockCh);
 
         //tells the selector we want to know when data is available to be read
         sockCh.register(this.selector, SelectionKey.OP_READ);
@@ -140,8 +140,8 @@ public class Proxy implements Runnable {
         //clear the buffer. if we've reached this point again we've already passed data on
         this.readBuf.clear();
         //TODO DEBUG
-        if(key.attachment()==null && freePipes.contains(key.channel())) {
-            freePipes.remove(key.channel());
+        if(key.attachment()==null && this.freePipes.contains(key.channel())) {
+            this.freePipes.remove(key.channel());
         }
         int numRead;
         try{
@@ -172,7 +172,7 @@ public class Proxy implements Runnable {
 
             int connectionId=(int)key.attachment();
 
-            if(!freePipes.isEmpty()){
+            if(!this.freePipes.isEmpty()){
                 if(this.responseDataList.containsKey(connectionId)){
                     ArrayList<byte[]> dataMessages=this.responseDataList.get(connectionId);
                     byte[] dataMsg=PacketAnalyzer.generateDataMessage(readBuf,connectionId,expectedSequenceNumber,numRead);
@@ -341,7 +341,7 @@ public class Proxy implements Runnable {
                     key.interestOps(SelectionKey.OP_READ);
 
                     //done performing write, so add back to the freePipes
-                    freePipes.add(sockCh);
+                    this.freePipes.add(sockCh);
                 }
             }
         }
