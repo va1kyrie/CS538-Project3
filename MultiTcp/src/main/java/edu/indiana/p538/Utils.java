@@ -7,6 +7,7 @@ public class Utils {
         String digits = "0123456789ABCDEF";
         s = s.toUpperCase();
         int val = 0;
+
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             int d = digits.indexOf(c);
@@ -14,6 +15,7 @@ public class Utils {
         }
         return val;
     }
+
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for ( int j = 0; j < bytes.length; j++ ) {

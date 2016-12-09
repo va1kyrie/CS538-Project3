@@ -28,8 +28,7 @@ public class PacketAnalyzer {
             buf.order(ByteOrder.LITTLE_ENDIAN);
             int portNum = (int) buf.getShort();
             return new InetSocketAddress(ipAddress,portNum);
-        }
-        catch(UnknownHostException e){
+        }catch(UnknownHostException e){
             throw new RuntimeException("Unknown host",e);
         }
     }
@@ -38,8 +37,7 @@ public class PacketAnalyzer {
         byte[] head3 = Arrays.copyOfRange(header, 6, 8);
         if(Utils.bytesToHex(head3).equals("FFFF")){
             return true;
-        }
-        else{
+        }else{
             return false;
         }
     }
@@ -49,8 +47,7 @@ public class PacketAnalyzer {
 
         if(Utils.bytesToHex(head3).equals("FEFF")){
             return true;
-        }
-        else{
+        }else{
             return false;
         }
     }
@@ -114,8 +111,7 @@ public class PacketAnalyzer {
             System.out.println(Utils.bytesToHex(connBytes));
             System.out.println("size is"+dataMessage.length);
             return dataMessage;
-        }
-        catch (Exception e){
+        }catch (Exception e){
             e.printStackTrace();
             return null;
         }

@@ -30,7 +30,7 @@ public class ProxyWorker implements Runnable{
     public void run() {
         ProxyDataEvent event=null;
         while(true){
-            try {
+            try{
                 event = queue.take();
 
                 byte[] message = event.getData();
@@ -49,8 +49,7 @@ public class ProxyWorker implements Runnable{
                         (event.getProxy()).establishConn(msgInfo, new byte[0],connId);
                         tracker+=AppConstants.MSYN_LEN;
 
-                    }
-                    else if(PacketAnalyzer.isMFin(header)){
+                    }else if(PacketAnalyzer.isMFin(header)){
                         //Code commented for now
                         //else test for MFIN
                         byte payload = message[AppConstants.MHEADER];
@@ -77,7 +76,7 @@ public class ProxyWorker implements Runnable{
                     }
                 }
 
-            } catch (Exception e) {
+            }catch (Exception e) {
                 e.printStackTrace();
             }
 

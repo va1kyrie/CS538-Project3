@@ -56,7 +56,7 @@ public class Proxy implements Runnable {
     @Override
     public void run() {
         while(true){
-            try {
+            try{
                 Iterator<ProxyEvents> iter = this.pendingEvents.iterator();
                 while(iter.hasNext()){
                     ProxyEvents event = iter.next();
@@ -114,7 +114,7 @@ public class Proxy implements Runnable {
                         }
                     }
                 }
-            } catch (IOException e) {
+            }catch (IOException e) {
                 e.printStackTrace();
             }
 
@@ -153,7 +153,7 @@ public class Proxy implements Runnable {
             //socket shut down cleanly. cancel channel
             System.out.println("Closed socket");
 
-          //TODO DEBUG
+            //TODO DEBUG
             key.channel().close();
             key.cancel();
             return;
@@ -165,8 +165,7 @@ public class Proxy implements Runnable {
             this.worker.processData(this, sockCh, this.readBuf.array(), numRead);
             key.interestOps(SelectionKey.OP_READ);
 
-        }
-        else{
+        }else{
 
             int connectionId=(int)key.attachment();
 
@@ -177,8 +176,7 @@ public class Proxy implements Runnable {
                     expectedSequenceNumber+=1;
                     dataMessages.add(dataMsg);
                     this.responseDataList.put(connectionId,dataMessages);
-                }
-                else{
+                }else{
                     ArrayList<byte[]> dataMessages=new ArrayList<>();
                     byte[] dataMsg=PacketAnalyzer.generateDataMessage(readBuf,connectionId,expectedSequenceNumber,numRead);
                     expectedSequenceNumber+=1;
@@ -199,8 +197,7 @@ public class Proxy implements Runnable {
         //Here the data comes in first and so we're expecting the SYN packet first
         if(!expectedSequenceList.containsKey(connInfo)){
             expectedSequenceList.put(connInfo,0);
-        }
-        else{
+        }else{
             int expectedSeq=expectedSequenceList.get(connInfo);
             //If the expected seq is what comes in, we increment the expectedseq number
             if(expectedSeq==seqId){
@@ -222,8 +219,7 @@ public class Proxy implements Runnable {
             }
             expectedSequenceList.put(connInfo,expectedSeq);
 
-        }
-        else{
+        }else{
             ConcurrentSkipListMap<Integer,byte[]> dataMap=new ConcurrentSkipListMap<>();
             dataMap.put(seqId,data);
             connectionDataList.put(connInfo,dataMap);
@@ -256,8 +252,7 @@ public class Proxy implements Runnable {
             //this.selector.wakeup();
             serverChannel.connect(msgInfo);
 
-        }
-        catch(IOException e){
+        }catch(IOException e){
             e.printStackTrace();
         }
     }
@@ -267,8 +262,7 @@ public class Proxy implements Runnable {
             int expectedSequence=expectedSequenceList.get(connId);
             if(expectedSequence==seqNum) {
                 this.pendingEvents.add(new ProxyEvents(new byte[0], connId, ProxyEvents.ENDING, SelectionKey.OP_CONNECT, -1));
-            }
-            else{
+            }else{
                 ConcurrentSkipListMap<Integer,byte[]> dataMap= connectionDataList.get(connId);
                 dataMap.put(connId,null);
             }
@@ -279,14 +273,13 @@ public class Proxy implements Runnable {
         //Complete connecting. This would return true if the connection is successful
         try {
             socketChannel.finishConnect();
-        } catch (IOException e) {
+        }catch (IOException e) {
             e.printStackTrace();
             key.cancel();
             return;
         }
 
         //Since connection is established, show interest in writing data to the server
-
 
         key.interestOps(SelectionKey.OP_WRITE); //not sure all these op changes should be here
     }
@@ -309,19 +302,17 @@ public class Proxy implements Runnable {
                         }
                     }
                 }
-                    for(int availSequence:seqNumberList){
-                        if(availSequence<expectedSequence) {
-                            dataMap.remove(availSequence);
-                        }
+                for(int availSequence:seqNumberList){
+                    if(availSequence<expectedSequence) {
+                        dataMap.remove(availSequence);
                     }
-                    if((dataMap.containsKey(expectedSequence))&&(dataMap.get(expectedSequence)==null)){
-                        this.pendingEvents.add(new ProxyEvents(new byte[0], connId, ProxyEvents.ENDING, SelectionKey.OP_CONNECT, -1));
-                    }
-                    else {
-                        key.interestOps(SelectionKey.OP_READ);
-                    }
-            }
-            else{
+                }
+                if((dataMap.containsKey(expectedSequence))&&(dataMap.get(expectedSequence)==null)){
+                    this.pendingEvents.add(new ProxyEvents(new byte[0], connId, ProxyEvents.ENDING, SelectionKey.OP_CONNECT, -1));
+                }else {
+                    key.interestOps(SelectionKey.OP_READ);
+                }
+            }else{
                 key.interestOps(SelectionKey.OP_WRITE);//seriously this looks so wrong to me
             }
         }
@@ -338,6 +329,7 @@ public class Proxy implements Runnable {
                     }
                     dataList.remove(0);
                 }
+
                 if (dataList.isEmpty()) {
                     key.interestOps(SelectionKey.OP_READ);
 
