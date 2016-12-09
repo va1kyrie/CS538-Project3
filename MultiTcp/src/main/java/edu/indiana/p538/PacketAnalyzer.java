@@ -14,12 +14,12 @@ import java.util.Arrays;
  */
 public class PacketAnalyzer {
 
-	/*
-	 * Returns a connection object with information retrieved from the SYN
-	 * packet
-	 */
-	public static InetSocketAddress fetchConnectionInfo(byte[] packetStream) {
-		int packetPointer = 0, synPointer = 0;
+    /*
+     * Returns a connection object with information retrieved from the SYN
+     * packet
+     */
+    public static InetSocketAddress fetchConnectionInfo(byte[] packetStream) {
+        int packetPointer = 0, synPointer = 0;
         byte[] ip = Arrays.copyOfRange(packetStream, 8, 12);
         byte[] port = Arrays.copyOfRange(packetStream, 12, 14);
         try {
@@ -32,42 +32,21 @@ public class PacketAnalyzer {
         catch(UnknownHostException e){
             throw new RuntimeException("Unknown host",e);
         }
-	}
+    }
 
-	public static boolean isMSyn(byte[] header){
+    public static boolean isMSyn(byte[] header){
         byte[] head3 = Arrays.copyOfRange(header, 6, 8);
-		if(Utils.bytesToHex(head3).equals("FFFF")){
-			return true;
-		}
-		else{
-			return false;
-		}
-		// Commented out for now as buf.getShort() was returning -1. Can you take a look?
-		/*
-		ByteBuffer buf = ByteBuffer.wrap(head3);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        int val = (int) Integer.getUnsignedLong(buf.getShort());
-		System.out.println("Val is"+val);
-		if(val == AppConstants.MSYN){
+        if(Utils.bytesToHex(head3).equals("FFFF")){
             return true;
-        }else{
+        }
+        else{
             return false;
         }
-        */
     }
 
     public static boolean isMFin(byte[] header){
         byte[] head3 = Arrays.copyOfRange(header, 6, 8);
-        /*ByteBuffer buf = ByteBuffer.wrap(head3);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        int val = (int) buf.getShort();
 
-        if(val == AppConstants.MFIN){
-            return true;
-        }else{
-            return false;
-        }*/
-        //Fin is identifed by FEFF and not FFFE. Need to follow up with prof on this
         if(Utils.bytesToHex(head3).equals("FEFF")){
             return true;
         }
@@ -117,28 +96,28 @@ public class PacketAnalyzer {
         ByteBuffer connBuffer=ByteBuffer.allocate(2);
         ByteBuffer seqBuffer=ByteBuffer.allocate(4);
         ByteBuffer lenBuffer=ByteBuffer.allocate(2);
-try {
-    connBuffer.order(ByteOrder.LITTLE_ENDIAN);
-    connBuffer.putShort((short) connectionID);
-    byte connBytes[] = connBuffer.array();
-    byte seqBytes[] = seqBuffer.putInt(sequenceNumber).array();
-    lenBuffer.order(ByteOrder.LITTLE_ENDIAN);
-    numRead+=8;
-    System.out.println("Return message length is"+(short)numRead);
-    byte lenBytes[]=lenBuffer.putShort((short)numRead).array();
-    byte dataMessage[] = new byte[numRead];
-    System.arraycopy(connBytes, 0, dataMessage, 0, connBytes.length);
-    System.arraycopy(seqBytes, 0, dataMessage, connBytes.length, seqBytes.length);
-    System.arraycopy(lenBytes, 0, dataMessage, connBytes.length+seqBytes.length, lenBytes.length);
+        try {
+            connBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            connBuffer.putShort((short) connectionID);
+            byte connBytes[] = connBuffer.array();
+            byte seqBytes[] = seqBuffer.putInt(sequenceNumber).array();
+            lenBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            numRead+=8;
+            System.out.println("Return message length is"+(short)numRead);
+            byte lenBytes[]=lenBuffer.putShort((short)numRead).array();
+            byte dataMessage[] = new byte[numRead];
+            System.arraycopy(connBytes, 0, dataMessage, 0, connBytes.length);
+            System.arraycopy(seqBytes, 0, dataMessage, connBytes.length, seqBytes.length);
+            System.arraycopy(lenBytes, 0, dataMessage, connBytes.length+seqBytes.length, lenBytes.length);
 
-    System.arraycopy(responseData.array(), 0, dataMessage, connBytes.length + seqBytes.length+lenBytes.length, numRead-8);
-    System.out.println(Utils.bytesToHex(connBytes));
-    System.out.println("size is"+dataMessage.length);
-    return dataMessage;
-}
-catch (Exception e){
-    e.printStackTrace();
-    return null;
-}
+            System.arraycopy(responseData.array(), 0, dataMessage, connBytes.length + seqBytes.length+lenBytes.length, numRead-8);
+            System.out.println(Utils.bytesToHex(connBytes));
+            System.out.println("size is"+dataMessage.length);
+            return dataMessage;
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
     }
 }
