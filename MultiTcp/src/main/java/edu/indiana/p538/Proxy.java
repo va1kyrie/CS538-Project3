@@ -79,7 +79,6 @@ public class Proxy implements Runnable {
                             break;
                         case ProxyEvents.ENDING:
                             connectChannel=this.connectionChannelMap.get(event.getConnId());
-                             //connectChannel.register(this.selector, event.getOps(), event.getConnId());
                             if(responseDataList.containsKey(event.getConnId())){
                                 System.out.println("It has key");
                             }
@@ -136,7 +135,6 @@ public class Proxy implements Runnable {
         SocketChannel sockCh = (SocketChannel) key.channel();
         //clear the buffer. if we've reached this point again we've already passed data on
         this.readBuf.clear();
-        //System.out.println("Inside rread");
         //TODO DEBUG
         if(key.attachment()==null && freePipes.contains(key.channel())) {
             freePipes.remove(key.channel());
@@ -187,7 +185,6 @@ public class Proxy implements Runnable {
                     dataMessages.add(dataMsg);
                     this.responseDataList.put(connectionId,dataMessages);
                 }
-                //TODO XXY Moved here from previous TODO XXY
 
             }
         }
@@ -195,8 +192,6 @@ public class Proxy implements Runnable {
 
     protected  void send(int connInfo, byte[] data,int seqId){
         //add it to the buffer queue, send on as we can
-        //NOPE WE DO NOT NEED THE SOCKET STOP THINKING WE DO JEEZ.
-        //SocketChannel connChannel=this.connectionChannelMap.get(connInfo);
         //Null check needed
 
         //Pull the data based on the connection ID
@@ -233,7 +228,6 @@ public class Proxy implements Runnable {
             dataMap.put(seqId,data);
             connectionDataList.put(connInfo,dataMap);
         }
-       // this.selector.wakeup();
     }
 
     protected void establishConn(InetSocketAddress msgInfo, byte[] data, int connId){
