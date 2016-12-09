@@ -98,7 +98,7 @@ public class ProxyWorker implements Runnable{
                 ByteBuffer payload = ByteBuffer.wrap(data);
                 int numRead = data.length;
                 byte[] dataMsg=PacketUtils.generateDataMessage(payload,connectionId,expectedSequenceNumber,numRead);
-                // expectedSequenceNumber++;
+                expectedSequenceNumber++;
                 (event.getProxy()).send(connectionId, dataMsg, seqNum, TO_LP);
             }
 

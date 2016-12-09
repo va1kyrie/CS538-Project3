@@ -67,10 +67,12 @@ public class Proxy implements Runnable {
                 //a specific socket.
                 Iterator<ProxyEvents> iter = this.pendingEvents.iterator();
                 while(iter.hasNext()){
+                    System.out.println("entering the while for pendingEvents");
                     ProxyEvents event = iter.next();
                     this.pendingEvents.remove(event);
                     switch (event.getType()){
                         case ProxyEvents.WRITING:
+                            System.out.println("WRITING");
                             SocketChannel connectChannel=event.getSocketCh(); //how does this work for server>>client messages instead of client>>server? i don't think it does...
                             SelectionKey key = connectChannel.keyFor(this.selector);
                             key.interestOps(event.getOps());
@@ -311,6 +313,7 @@ public class Proxy implements Runnable {
         //Server channel write
         if(key.attachment()!=null) { //if not null, there's an attachment and it's the connection we created to the actual server
             int connId = (int) key.attachment();
+            System.out.println("WRITING to server: " + connId);
             if (connectionDataList.containsKey(connId)) {
                 ArrayList<byte[]> dataList = connectionDataList.get(connId);
                 while (!dataList.isEmpty()) {
