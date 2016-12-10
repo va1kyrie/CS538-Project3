@@ -83,6 +83,8 @@ public class Proxy implements Runnable {
                             //I'm attaching the connectionID with this socket for now.
                             // We might to make this an arraylist of connectionIDs soon
                             connectChannel.register(this.selector,event.getOps(),event.getConnId());
+
+                            System.out.println("registering sever ID " + connectChannel.keyFor(this.selector).attachment());
                             //more to do??
                             break;
                         case ProxyEvents.ENDING:
@@ -118,6 +120,7 @@ public class Proxy implements Runnable {
                             this.read(key);
                         }else if(key.isWritable()){
                             //write to the key
+                            System.out.println("writing to packet");
                             this.write(key);
                         }
                     }
@@ -325,9 +328,8 @@ public class Proxy implements Runnable {
                     dataList.remove(0);
                     System.out.println("writing to server");
                 }
-                if (dataList.isEmpty()) {
-                    key.interestOps(SelectionKey.OP_READ);
-                }
+                key.interestOps(SelectionKey.OP_READ);
+
             }
         }
         // LP channel write starts here
@@ -345,9 +347,9 @@ public class Proxy implements Runnable {
                     dataList.remove(0);
                     System.out.println("writing to LP");
                 }
-                if (dataList.isEmpty()) {
-                    key.interestOps(SelectionKey.OP_READ);
-                }
+
+                key.interestOps(SelectionKey.OP_READ);
+
             }
         }
     }
